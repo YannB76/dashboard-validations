@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dashboard Validations Documents</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', system-ui, sans-serif; background: #f5f5f4; color: #1a1a18; min-height: 100vh; }
+  .header { background: #1F3864; color: #fff; padding: 18px 28px; display: flex; align-items: center; justify-content: space-between; }
+  .header h1 { font-size: 17px; font-weight: 500; letter-spacing: 0.02em; }
+  .header .subtitle { font-size: 12px; opacity: 0.65; margin-top: 2px; }
+  .container { max-width: 1200px; margin: 0 auto; padding: 20px 20px 40px; }
+  .filters { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 20px; padding: 14px 16px; background: #fff; border-radius: 10px; border: 0.5px solid #e0e0e0; }
+  .filters label { font-size: 12px; color: #666; font-weight: 500; }
+  .filters select { font-size: 13px; padding: 6px 10px; border-radius: 7px; border: 1px solid #d0d0d0; background: #fff; color: #1a1a18; cursor: pointer; }
+  .filters select:hover { border-color: #1F3864; }
+  .filter-group { display: flex; flex-direction: column; gap: 4px; }
+  .kpi-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; margin-bottom: 20px; }
+  .kpi { background: #fff; border-radius: 10px; padding: 16px; border: 0.5px solid #e8e8e8; }
+  .kpi .label { font-size: 11px; color: #888; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 8px; }
+  .kpi .value { font-size: 28px; font-weight: 600; }
+  .kpi .sub { font-size: 12px; margin-top: 4px; color: #888; }
+  .kpi.green .value { color: #2d7a2d; }
+  .kpi.yellow .value { color: #8a5a00; }
+  .kpi.red .value { color: #c0392b; }
+  .kpi.blue .value { color: #1F3864; }
+  .charts-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
+  .chart-card { background: #fff; border-radius: 10px; padding: 18px; border: 0.5px solid #e8e8e8; }
+  .chart-card h3 { font-size: 13px; font-weight: 600; color: #444; margin-bottom: 14px; }
+  .legend { display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 12px; font-size: 11px; color: #555; }
+  .legend span { display: flex; align-items: center; gap: 5px; }
+  .legend-dot { width: 10px; height: 10px; border-radius: 2px; flex-shrink: 0; }
+  .table-card { background: #fff; border-radius: 10px; padding: 18px; border: 0.5px solid #e8e8e8; margin-top: 16px; }
+  .table-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
+  .table-header h3 { font-size: 13px; font-weight: 600; color: #444; }
+  .table-header .count { font-size: 12px; color: #888; background: #f0f0f0; padding: 3px 10px; border-radius: 99px; }
+  .tbl-wrap { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
+  th { text-align: left; padding: 9px 12px; border-bottom: 1.5px solid #e8e8e8; color: #666; font-weight: 600; white-space: nowrap; font-size: 11px; text-transform: uppercase; letter-spacing: 0.04em; }
+  td { padding: 10px 12px; border-bottom: 0.5px solid #f0f0f0; color: #1a1a18; white-space: nowrap; }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: #fafaf8; }
+  .badge { display: inline-block; padding: 3px 9px; border-radius: 99px; font-size: 11px; font-weight: 600; }
+  .badge-green { background: #e4f5e4; color: #1e6b1e; }
+  .badge-yellow { background: #fff3cd; color: #7a5200; }
+  .badge-red { background: #fde8e8; color: #b02020; }
+  .badge-crit { background: #fde8e8; color: #b02020; }
+  .badge-exp { background: #fff3cd; color: #7a5200; }
+  .badge-rout { background: #e3eeff; color: #1a3f8f; }
+  .retard-ok { color: #2d7a2d; font-weight: 600; }
+  .retard-warn { color: #8a5a00; font-weight: 600; }
+  .retard-bad { color: #c0392b; font-weight: 600; }
+  .pagination { display: flex; align-items: center; gap: 8px; margin-top: 14px; font-size: 12px; color: #888; justify-content: flex-end; }
+  .pagination button { padding: 5px 14px; border-radius: 7px; border: 1px solid #d0d0d0; background: #fff; color: #333; cursor: pointer; font-size: 12px; }
+  .pagination button:hover { background: #f0f0f0; }
+  @media (max-width: 700px) {
+    .charts-row { grid-template-columns: 1fr; }
+    .kpi-grid { grid-template-columns: repeat(2, 1fr); }
+  }
+</style>
+</head>
+<body>
+<div class="header">
+  <div>
+    <div class="h1">Dashboard — Suivi des validations de documents</div>
+    <div class="subtitle">Remplacement · RAS sans justif stress · RAS avec justif stress</div>
+  </div>
+  <div style="font-size:12px;opacity:0.6">50 cas · 2025</div>
+</div>
+
+<div class="container">
+  <div class="filters">
+    <div class="filter-group">
+      <label>Type de cas</label>
+      <select id="f-type" onchange="applyFilters()">
+        <option value="">Tous les types</option>
+        <option value="Remplacement">Remplacement</option>
+        <option value="RAS sans justif stress">RAS sans justif stress</option>
+        <option value="RAS avec justif stress">RAS avec justif stress</option>
+      </select>
+    </div>
+    <div class="filter-group">
+      <label>Priorité</label>
+      <select id="f-prio" onchange="applyFilters()">
+        <option value="">Toutes priorités</option>
+        <option value="Critical">Critical</option>
+        <option value="Expedite">Expedite</option>
+        <option value="Routine">Routine</option>
+      </select>
+    </div>
+    <div class="filter-group">
+      <label>Statut</label>
+      <select id="f-statut" onchange="applyFilters()">
+        <option value="">Tous statuts</option>
+        <option value="Dans les temps">Dans les temps</option>
+        <option value="Retard mineur">Retard mineur</option>
+        <option value="En retard">En retard</option>
+      </select>
+    </div>
+  </div>
+
+  <div class="kpi-grid" id="kpi-grid"></div>
+
+  <div class="charts-row">
+    <div class="chart-card">
+      <h3>Répartition par statut</h3>
+      <div class="legend" id="leg-statut"></div>
+      <div style="position:relative;height:200px;"><canvas id="chartStatut"></canvas></div>
+    </div>
+    <div class="chart-card">
+      <h3>Retard moyen par type et priorité (j. ouvrés)</h3>
+      <div class="legend" id="leg-bar"></div>
+      <div style="position:relative;height:200px;"><canvas id="chartBar"></canvas></div>
+    </div>
+  </div>
+
+  <div class="chart-card">
+    <h3>Retard moyen par étape de validation (j. ouvrés)</h3>
+    <div style="position:relative;height:180px;margin-top:8px;"><canvas id="chartVal"></canvas></div>
+  </div>
+
+  <div class="table-card">
+    <div class="table-header">
+      <h3>Détail des cas</h3>
+      <span class="count" id="count-label"></span>
+    </div>
+    <div class="tbl-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>ID</th><th>Type</th><th>Priorité</th><th>CRD</th><th>Statut</th>
+            <th>Nb valid.</th><th>Retard max</th><th>Étape la plus en retard</th>
+          </tr>
+        </thead>
+        <tbody id="table-body"></tbody>
+      </table>
+    </div>
+    <div class="pagination">
+      <span id="pag-info"></span>
+      <button onclick="changePage(-1)">‹ Préc.</button>
+      <button onclick="changePage(1)">Suiv. ›</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const RAW = [{"id":"CASE-001","type":"Remplacement","priorite":"Routine","crd":"2025-03-13","statut":"Dans les temps","validations":[{"num":1,"nom":"VT design","retard":-1},{"num":2,"nom":"AM design","retard":-2}]},{"id":"CASE-002","type":"Remplacement","priorite":"Critical","crd":"2025-03-27","statut":"En retard","validations":[{"num":1,"nom":"VT design","retard":3},{"num":2,"nom":"AM design","retard":1}]},{"id":"CASE-003","type":"Remplacement","priorite":"Routine","crd":"2025-08-19","statut":"Dans les temps","validations":[{"num":1,"nom":"VT design","retard":-2},{"num":2,"nom":"AM design","retard":-2}]},{"id":"CASE-004","type":"Remplacement","priorite":"Critical","crd":"2025-09-30","statut":"En retard","validations":[{"num":1,"nom":"VT design","retard":3},{"num":2,"nom":"AM design","retard":2}]},{"id":"CASE-005","type":"Remplacement","priorite":"Routine","crd":"2025-12-15","statut":"Retard mineur","validations":[{"num":1,"nom":"VT design","retard":2},{"num":2,"nom":"AM design","retard":2}]},{"id":"CASE-006","type":"Remplacement","priorite":"Expedite","crd":"2025-11-12","statut":"Dans les temps","validations":[{"num":1,"nom":"VT design","retard":-2},{"num":2,"nom":"AM design","retard":-2}]},{"id":"CASE-007","type":"Remplacement","priorite":"Routine","crd":"2025-08-19","statut":"Dans les temps","validations":[{"num":1,"nom":"VT design","retard":-2},{"num":2,"nom":"AM design","retard":-2}]},{"id":"CASE-008","type":"Remplacement","priorite":"Expedite","crd":"2025-03-10","statut":"Dans les temps","validations":[{"num":1,"nom":"VT design","retard":-2},{"num":2,"nom":"AM design","retard":-1}]},{"id":"CASE-009","type":"Remplacement","priorite":"Expedite","crd":"2025-11-20","statut":"Dans les temps","validations":[{"num":1,"nom":"VT design","retard":-2},{"num":2,"nom":"AM design","retard":0}]},{"id":"CASE-010","type":"Remplacement","priorite":"Expedite","crd":"2025-10-16","statut":"Dans les temps","validations":[{"num":1,"nom":"VT design","retard":-1},{"num":2,"nom":"AM design","retard":-2}]},{"id":"CASE-011","type":"Remplacement","priorite":"Routine","crd":"2025-06-16","statut":"En retard","validations":[{"num":1,"nom":"VT design","retard":3},{"num":2,"nom":"AM design","retard":3}]},{"id":"CASE-012","type":"Remplacement","priorite":"Routine","crd":"2025-04-23","statut":"Retard mineur","validations":[{"num":1,"nom":"VT design","retard":-1},{"num":2,"nom":"AM design","retard":2}]},{"id":"CASE-013","type":"Remplacement","priorite":"Expedite","crd":"2025-02-24","statut":"En retard","validations":[{"num":1,"nom":"VT design","retard":-1},{"num":2,"nom":"AM design","retard":4}]},{"id":"CASE-014","type":"Remplacement","priorite":"Expedite","crd":"2025-09-04","statut":"Retard mineur","validations":[{"num":1,"nom":"VT design","retard":1},{"num":2,"nom":"AM design","retard":2}]},{"id":"CASE-015","type":"Remplacement","priorite":"Expedite","crd":"2025-07-15","statut":"Dans les temps","validations":[{"num":1,"nom":"VT design","retard":-1},{"num":2,"nom":"AM design","retard":0}]},{"id":"CASE-016","type":"Remplacement","priorite":"Routine","crd":"2025-12-12","statut":"Dans les temps","validations":[{"num":1,"nom":"VT design","retard":0},{"num":2,"nom":"AM design","retard":-2}]},{"id":"CASE-017","type":"Remplacement","priorite":"Routine","crd":"2025-05-20","statut":"Dans les temps","validations":[{"num":1,"nom":"VT design","retard":-1},{"num":2,"nom":"AM design","retard":-1}]},{"id":"CASE-018","type":"RAS sans justif stress","priorite":"Routine","crd":"2025-10-27","statut":"Dans les temps","validations":[{"num":1,"nom":"VT design","retard":-1},{"num":2,"nom":"AM design","retard":-2},{"num":5,"nom":"AAT","retard":-2},{"num":6,"nom":"CVE","retard":-2},{"num":7,"nom":"DAE","retard":-1}]},{"id":"CASE-019","type":"RAS sans justif stress","priorite":"Expedite","crd":"2025-06-02","statut":"Dans les temps","validations":[{"num":1,"nom":"VT design","retard":0},{"num":2,"nom":"AM design","retard":0},{"num":5,"nom":"AAT","retard":-1},{"num":6,"nom":"CVE","retard":-2},{"num":7,"nom":"DAE","retard":0}]},{"id":"CASE-020","type":"RAS sans justif stress","priorite":"Expedite","crd":"2025-08-05","statut":"Retard mineur","validations":[{"num":1,"nom":"VT design","retard":2},{"num":2,"nom":"AM design","retard":0},{"num":5,"nom":"AAT","retard":1},{"num":6,"nom":"CVE","retard":0},{"num":7,"nom":"DAE","retard":2}]},{"id":"CASE-021","type":"RAS sans justif stress","priorite":"Routine","crd":"2025-10-29","statut":"Dans les temps","validations":[{"num":1,"nom":"VT design","retard":0},{"num":2,"nom":"AM design","retard":0},{"num":5,"nom":"AAT","retard":-1},{"num":6,"nom":"CVE","retard":0},{"num":7,"nom":"DAE","retard":-1}]},{"id":"CASE-022","type":"RAS sans justif stress","priorite":"Expedite","crd":"2025-05-07","statut":"En retard","validations":[{"num":1,"nom":"VT design","retard":0},{"num":2,"nom":"AM design","retard":3},{"num":5,"nom":"AAT","retard":2},{"num":6,"nom":"CVE","retard":-1},{"num":7,"nom":"DAE","retard":1}]},{"id":"CASE-023","type":"RAS sans justif stress","priorite":"Critical","crd":"2025-04-03","statut":"En retard","validations":[{"num":1,"nom":"VT design","retard":2},{"num":2,"nom":"AM design","retard":3},{"num":5,"nom":"AAT","retard":-1},{"num":6,"nom":"CVE","retard":2},{"num":7,"nom":"DAE","retard":4}]},{"id":"CASE-024","type":"RAS sans justif stress","priorite":"Routine","crd":"2025-09-11","statut":"Dans les temps","validations":[{"num":1,"nom":"VT design","retard":0},{"num":2,"nom":"AM design","retard":-2},{"num":5,"nom":"AAT","retard":0},{"num":6,"nom":"CVE","retard":0},{"num":7,"nom":"DAE","retard":-2}]},{"id":"CASE-025","type":"RAS sans justif stress","priorite":"Routine","crd":"2025-10-16","statut":"Retard mineur","validations":[{"num":1,"nom":"VT design","retard":1},{"num":2,"nom":"AM design","retard":-1},{"num":5,"nom":"AAT","retard":1},{"num":6,"nom":"CVE","retard":2},{"num":7,"nom":"DAE","retard":2}]},{"id":"CASE-026","type":"RAS sans justif stress","priorite":"Expedite","crd":"2025-01-16","statut":"En retard","validations":[{"num":1,"nom":"VT design","retard":1},{"num":2,"nom":"AM design","retard":3},{"num":5,"nom":"AAT","retard":0},{"num":6,"nom":"CVE","retard":3},{"num":7,"nom":"DAE","retard":1}]},{"id":"CASE-027","type":"RAS sans justif stress","priorite":"Routine","crd":"2025-06-16","statut":"En retard","validations":[{"num":1,"nom":"VT design","retard":3},{"num":2,"nom":"AM design","retard":3},{"num":5,"nom":"AAT","retard":0},{"num":6,"nom":"CVE","retard":0},{"num":7,"nom":"DAE","retard":3}]},{"id":"CASE-028","type":"RAS sans justif stress","priorite":"Critical","crd":"2025-10-20","statut":"En retard","validations":[{"num":1,"nom":"VT design","retard":3},{"num":2,"nom":"AM design","retard":-1},{"num":5,"nom":"AAT","retard":3},{"num":6,"nom":"CVE","retard":1},{"num":7,"nom":"DAE","retard":4}]},{"id":"CASE-029","type":"RAS sans justif stress","priorite":"Critical","crd":"2025-03-13","statut":"En retard","validations":[{"num":1,"nom":"VT design","retard":1},{"num":2,"nom":"AM design","retard":0},{"num":5,"nom":"AAT","retard":-1},{"num":6,"nom":"CVE","retard":0},{"num":7,"nom":"DAE","retard":5}]},{"id":"CASE-030","type":"RAS sans justif stress","priorite":"Critical","crd":"2025-02-27","statut":"En retard","validations":[{"num":1,"nom":"VT design","retard":-1},{"num":2,"nom":"AM design","retard":3},{"num":5,"nom":"AAT","retard":0},{"num":6,"nom":"CVE","retard":0},{"num":7,"nom":"DAE","retard":4}]},{"id":"CASE-031","type":"RAS sans justif stress","priorite":"Routine","crd":"2025-04-09","statut":"Dans les temps","validations":[{"num":1,"nom":"VT design","retard":0},{"num":2,"nom":"AM design","retard":-1},{"num":5,"nom":"AAT","retard":-2},{"num":6,"nom":"CVE","retard":0},{"num":7,"nom":"DAE","retard":0}]},{"id":"CASE-032","type":"RAS sans justif stress","priorite":"Routine","crd":"2025-04-28","statut":"En retard","validations":[{"num":1,"nom":"VT design","retard":2},{"num":2,"nom":"AM design","retard":1},{"num":5,"nom":"AAT","retard":2},{"num":6,"nom":"CVE","retard":3},{"num":7,"nom":"DAE","retard":4}]},{"id":"CASE-033","type":"RAS sans justif stress","priorite":"Critical","crd":"2025-05-21","statut":"Dans les temps","validations":[{"num":1,"nom":"VT design","retard":-1},{"num":2,"nom":"AM design","retard":-2},{"num":5,"nom":"AAT","retard":0},{"num":6,"nom":"CVE","retard":0},{"num":7,"nom":"DAE","retard":-2}]},{"id":"CASE-034","type":"RAS sans justif stress","priorite":"Routine","crd":"2025-05-07","statut":"Dans les temps","validations":[{"num":1,"nom":"VT design","retard":0},{"num":2,"nom":"AM design","retard":0},{"num":5,"nom":"AAT","retard":-2},{"num":6,"nom":"CVE","retard":-2},{"num":7,"nom":"DAE","retard":-2}]},{"id":"CASE-035","type":"RAS avec justif stress","priorite":"Critical","crd":"2025-07-03","statut":"Dans les temps","validations":[{"num":1,"nom":"VT design","retard":-2},{"num":2,"nom":"AM design","retard":-1},{"num":3,"nom":"VT stress","retard":0},{"num":4,"nom":"AM stress","retard":-1},{"num":5,"nom":"AAT","retard":-2},{"num":6,"nom":"CVE","retard":0},{"num":7,"nom":"DAE","retard":-2}]},{"id":"CASE-036","type":"RAS avec justif stress","priorite":"Routine","crd":"2025-11-03","statut":"Dans les temps","validations":[{"num":1,"nom":"VT design","retard":-2},{"num":2,"nom":"AM design","retard":-1},{"num":3,"nom":"VT stress","retard":-1},{"num":4,"nom":"AM stress","retard":-2},{"num":5,"nom":"AAT","retard":-2},{"num":6,"nom":"CVE","retard":-2},{"num":7,"nom":"DAE","retard":0}]},{"id":"CASE-037","type":"RAS avec justif stress","priorite":"Expedite","crd":"2025-07-15","statut":"Dans les temps","validations":[{"num":1,"nom":"VT design","retard":-1},{"num":2,"nom":"AM design","retard":0},{"num":3,"nom":"VT stress","retard":-2},{"num":4,"nom":"AM stress","retard":0},{"num":5,"nom":"AAT","retard":0},{"num":6,"nom":"CVE","retard":0},{"num":7,"nom":"DAE","retard":-2}]},{"id":"CASE-038","type":"RAS avec justif stress","priorite":"Critical","crd":"2025-08-11","statut":"En retard","validations":[{"num":1,"nom":"VT design","retard":-1},{"num":2,"nom":"AM design","retard":0},{"num":3,"nom":"VT stress","retard":0},{"num":4,"nom":"AM stress","retard":0},{"num":5,"nom":"AAT","retard":3},{"num":6,"nom":"CVE","retard":2},{"num":7,"nom":"DAE","retard":2}]},{"id":"CASE-039","type":"RAS avec justif stress","priorite":"Expedite","crd":"2025-04-18","statut":"Dans les temps","validations":[{"num":1,"nom":"VT design","retard":-2},{"num":2,"nom":"AM design","retard":-2},{"num":3,"nom":"VT stress","retard":-1},{"num":4,"nom":"AM stress","retard":0},{"num":5,"nom":"AAT","retard":-2},{"num":6,"nom":"CVE","retard":-2},{"num":7,"nom":"DAE","retard":0}]},{"id":"CASE-040","type":"RAS avec justif stress","priorite":"Routine","crd":"2025-01-22","statut":"En retard","validations":[{"num":1,"nom":"VT design","retard":0},{"num":2,"nom":"AM design","retard":0},{"num":3,"nom":"VT stress","retard":2},{"num":4,"nom":"AM stress","retard":2},{"num":5,"nom":"AAT","retard":2},{"num":6,"nom":"CVE","retard":0},{"num":7,"nom":"DAE","retard":4}]},{"id":"CASE-041","type":"RAS avec justif stress","priorite":"Critical","crd":"2025-04-09","statut":"Dans les temps","validations":[{"num":1,"nom":"VT design","retard":-1},{"num":2,"nom":"AM design","retard":-1},{"num":3,"nom":"VT stress","retard":-1},{"num":4,"nom":"AM stress","retard":-1},{"num":5,"nom":"AAT","retard":-1},{"num":6,"nom":"CVE","retard":0},{"num":7,"nom":"DAE","retard":0}]},{"id":"CASE-042","type":"RAS avec justif stress","priorite":"Routine","crd":"2025-12-19","statut":"En retard","validations":[{"num":1,"nom":"VT design","retard":0},{"num":2,"nom":"AM design","retard":0},{"num":3,"nom":"VT stress","retard":1},{"num":4,"nom":"AM stress","retard":0},{"num":5,"nom":"AAT","retard":-1},{"num":6,"nom":"CVE","retard":3},{"num":7,"nom":"DAE","retard":5}]},{"id":"CASE-043","type":"RAS avec justif stress","priorite":"Critical","crd":"2025-06-24","statut":"Dans les temps","validations":[{"num":1,"nom":"VT design","retard":0},{"num":2,"nom":"AM design","retard":-1},{"num":3,"nom":"VT stress","retard":0},{"num":4,"nom":"AM stress","retard":0},{"num":5,"nom":"AAT","retard":-2},{"num":6,"nom":"CVE","retard":-2},{"num":7,"nom":"DAE","retard":0}]},{"id":"CASE-044","type":"RAS avec justif stress","priorite":"Critical","crd":"2025-04-21","statut":"Dans les temps","validations":[{"num":1,"nom":"VT design","retard":-2},{"num":2,"nom":"AM design","retard":0},{"num":3,"nom":"VT stress","retard":-2},{"num":4,"nom":"AM stress","retard":-1},{"num":5,"nom":"AAT","retard":-2},{"num":6,"nom":"CVE","retard":0},{"num":7,"nom":"DAE","retard":-2}]},{"id":"CASE-045","type":"RAS avec justif stress","priorite":"Routine","crd":"2025-11-17","statut":"Dans les temps","validations":[{"num":1,"nom":"VT design","retard":-2},{"num":2,"nom":"AM design","retard":-1},{"num":3,"nom":"VT stress","retard":0},{"num":4,"nom":"AM stress","retard":0},{"num":5,"nom":"AAT","retard":0},{"num":6,"nom":"CVE","retard":0},{"num":7,"nom":"DAE","retard":-1}]},{"id":"CASE-046","type":"RAS avec justif stress","priorite":"Expedite","crd":"2025-04-29","statut":"En retard","validations":[{"num":1,"nom":"VT design","retard":1},{"num":2,"nom":"AM design","retard":0},{"num":3,"nom":"VT stress","retard":1},{"num":4,"nom":"AM stress","retard":2},{"num":5,"nom":"AAT","retard":0},{"num":6,"nom":"CVE","retard":1},{"num":7,"nom":"DAE","retard":4}]},{"id":"CASE-047","type":"RAS avec justif stress","priorite":"Expedite","crd":"2025-02-21","statut":"Dans les temps","validations":[{"num":1,"nom":"VT design","retard":0},{"num":2,"nom":"AM design","retard":0},{"num":3,"nom":"VT stress","retard":-2},{"num":4,"nom":"AM stress","retard":-2},{"num":5,"nom":"AAT","retard":0},{"num":6,"nom":"CVE","retard":-2},{"num":7,"nom":"DAE","retard":0}]},{"id":"CASE-048","type":"RAS avec justif stress","priorite":"Expedite","crd":"2025-03-24","statut":"En retard","validations":[{"num":1,"nom":"VT design","retard":-1},{"num":2,"nom":"AM design","retard":0},{"num":3,"nom":"VT stress","retard":1},{"num":4,"nom":"AM stress","retard":1},{"num":5,"nom":"AAT","retard":0},{"num":6,"nom":"CVE","retard":2},{"num":7,"nom":"DAE","retard":5}]},{"id":"CASE-049","type":"RAS avec justif stress","priorite":"Routine","crd":"2025-06-18","statut":"En retard","validations":[{"num":1,"nom":"VT design","retard":3},{"num":2,"nom":"AM design","retard":-1},{"num":3,"nom":"VT stress","retard":3},{"num":4,"nom":"AM stress","retard":1},{"num":5,"nom":"AAT","retard":-1},{"num":6,"nom":"CVE","retard":0},{"num":7,"nom":"DAE","retard":3}]},{"id":"CASE-050","type":"RAS avec justif stress","priorite":"Critical","crd":"2025-03-10","statut":"En retard","validations":[{"num":1,"nom":"VT design","retard":0},{"num":2,"nom":"AM design","retard":1},{"num":3,"nom":"VT stress","retard":1},{"num":4,"nom":"AM stress","retard":3},{"num":5,"nom":"AAT","retard":0},{"num":6,"nom":"CVE","retard":1},{"num":7,"nom":"DAE","retard":2}]}];
+
+let filtered = [...RAW], page = 1;
+const PER_PAGE = 10;
+let chartStatut=null, chartBar=null, chartVal=null;
+
+const STAT_COLORS = {'Dans les temps':'#639922','Retard mineur':'#BA7517','En retard':'#c0392b'};
+const PRIO_COLORS = {'Critical':'#c0392b','Expedite':'#BA7517','Routine':'#1F3864'};
+
+function applyFilters() {
+  const t = document.getElementById('f-type').value;
+  const p = document.getElementById('f-prio').value;
+  const s = document.getElementById('f-statut').value;
+  filtered = RAW.filter(d => (!t||d.type===t) && (!p||d.priorite===p) && (!s||d.statut===s));
+  page = 1;
+  renderAll();
+}
+
+function renderAll() { renderKPI(); renderChartStatut(); renderChartBar(); renderChartVal(); renderTable(); }
+
+function renderKPI() {
+  const total = filtered.length;
+  const ok = filtered.filter(d=>d.statut==='Dans les temps').length;
+  const minor = filtered.filter(d=>d.statut==='Retard mineur').length;
+  const late = filtered.filter(d=>d.statut==='En retard').length;
+  const pos = filtered.flatMap(d=>d.validations.map(v=>v.retard)).filter(r=>r>0);
+  const avg = pos.length ? (pos.reduce((a,b)=>a+b,0)/pos.length).toFixed(1) : '0.0';
+  document.getElementById('kpi-grid').innerHTML = `
+    <div class="kpi blue"><div class="label">Total cas</div><div class="value">${total}</div><div class="sub">filtrés</div></div>
+    <div class="kpi green"><div class="label">Dans les temps</div><div class="value">${ok}</div><div class="sub">${total?Math.round(ok/total*100):0}%</div></div>
+    <div class="kpi yellow"><div class="label">Retard mineur</div><div class="value">${minor}</div><div class="sub">${total?Math.round(minor/total*100):0}%</div></div>
+    <div class="kpi red"><div class="label">En retard</div><div class="value">${late}</div><div class="sub">${total?Math.round(late/total*100):0}%</div></div>
+    <div class="kpi"><div class="label">Retard moyen</div><div class="value">${avg}j</div><div class="sub">jours ouvrés</div></div>`;
+}
+
+function renderChartStatut() {
+  const cnt = {'Dans les temps':0,'Retard mineur':0,'En retard':0};
+  filtered.forEach(d=>cnt[d.statut]++);
+  const labels=Object.keys(cnt), data=Object.values(cnt), colors=labels.map(l=>STAT_COLORS[l]);
+  document.getElementById('leg-statut').innerHTML = labels.map((l,i)=>`<span><span class="legend-dot" style="background:${colors[i]}"></span>${l} (${data[i]})</span>`).join('');
+  if(chartStatut) chartStatut.destroy();
+  chartStatut = new Chart(document.getElementById('chartStatut'),{type:'doughnut',data:{labels,datasets:[{data,backgroundColor:colors,borderWidth:2,borderColor:'#fff'}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}}}});
+}
+
+function renderChartBar() {
+  const types=['Remplacement','RAS sans justif stress','RAS avec justif stress'];
+  const short=['Rempl.','RAS sans j.','RAS avec j.'];
+  const prios=['Critical','Expedite','Routine'];
+  const datasets = prios.map(p=>({
+    label:p, backgroundColor:PRIO_COLORS[p],
+    data:types.map(t=>{
+      const cases=filtered.filter(d=>d.type===t&&d.priorite===p);
+      if(!cases.length) return 0;
+      const pos=cases.flatMap(d=>d.validations.map(v=>v.retard)).filter(r=>r>0);
+      return pos.length ? +(pos.reduce((a,b)=>a+b,0)/pos.length).toFixed(1) : 0;
+    })
+  }));
+  document.getElementById('leg-bar').innerHTML = prios.map(p=>`<span><span class="legend-dot" style="background:${PRIO_COLORS[p]}"></span>${p}</span>`).join('');
+  if(chartBar) chartBar.destroy();
+  chartBar = new Chart(document.getElementById('chartBar'),{type:'bar',data:{labels:short,datasets},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{font:{size:11}}},y:{ticks:{font:{size:11}},title:{display:true,text:'jours',font:{size:11}}}}}});
+}
+
+function renderChartVal() {
+  const names=['VT design','AM design','VT stress','AM stress','AAT','CVE','DAE'];
+  const avgs=names.map(n=>{
+    const r=filtered.flatMap(d=>d.validations.filter(v=>v.nom===n).map(v=>v.retard));
+    return r.length ? +(r.reduce((a,b)=>a+b,0)/r.length).toFixed(2) : null;
+  });
+  const colors=avgs.map(v=>v===null?'#ccc':v>1?'#c0392b':v>0?'#BA7517':'#639922');
+  if(chartVal) chartVal.destroy();
+  chartVal = new Chart(document.getElementById('chartVal'),{type:'bar',data:{labels:names,datasets:[{label:'Retard moy.',data:avgs,backgroundColor:colors,borderRadius:4}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{autoSkip:false,font:{size:11}}},y:{ticks:{font:{size:11}},title:{display:true,text:'jours ouvrés',font:{size:11}}}}}});
+}
+
+function renderTable() {
+  const start=(page-1)*PER_PAGE, slice=filtered.slice(start,start+PER_PAGE);
+  document.getElementById('count-label').textContent=`${filtered.length} cas`;
+  document.getElementById('pag-info').textContent=`${start+1}–${Math.min(start+PER_PAGE,filtered.length)} / ${filtered.length}`;
+  const pB=p=>p==='Critical'?'badge-crit':p==='Expedite'?'badge-exp':'badge-rout';
+  const sB=s=>s==='Dans les temps'?'badge-green':s==='Retard mineur'?'badge-yellow':'badge-red';
+  document.getElementById('table-body').innerHTML=slice.map(d=>{
+    const mx=Math.max(...d.validations.map(v=>v.retard));
+    const worst=d.validations.find(v=>v.retard===mx);
+    const rc=mx>2?'retard-bad':mx>0?'retard-warn':'retard-ok';
+    const ts=d.type==='Remplacement'?'Remplacement':d.type==='RAS sans justif stress'?'RAS sans justif':'RAS avec justif';
+    return `<tr><td style="font-weight:600">${d.id}</td><td>${ts}</td><td><span class="badge ${pB(d.priorite)}">${d.priorite}</span></td><td>${d.crd}</td><td><span class="badge ${sB(d.statut)}">${d.statut}</span></td><td style="text-align:center">${d.validations.length}</td><td class="${rc}">${mx>0?'+'+mx:mx}j</td><td style="color:#666">${worst?worst.nom:'—'}</td></tr>`;
+  }).join('');
+}
+
+function changePage(dir) {
+  const max=Math.ceil(filtered.length/PER_PAGE);
+  page=Math.max(1,Math.min(max,page+dir));
+  renderTable();
+}
+
+renderAll();
+</script>
+</body>
+</html>
